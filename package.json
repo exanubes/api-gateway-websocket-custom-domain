@@ -1,0 +1,21 @@
+{
+    "name": "apigw-websocket-api-custom-domain",
+    "main": "index.ts",
+    "devDependencies": {
+        "@aws-sdk/client-dynamodb": "^3.609.0",
+        "@types/aws-lambda": "^8.10.140",
+        "@types/node": "^18",
+        "aws-lambda": "^1.0.7",
+        "prettier": "^3.3.2",
+        "typescript": "^5.0.0"
+    },
+    "dependencies": {
+        "@aws-sdk/client-apigatewaymanagementapi": "^3.609.0",
+        "@exanubes/pulumi-nodejs-function": "^1.0.9",
+        "@exanubes/pulumi-websocket-api": "^1.0.7",
+        "@pulumi/aws": "^6.0.0",
+        "@pulumi/aws-native": "^0.110.0",
+        "@pulumi/awsx": "^2.0.2",
+        "@pulumi/pulumi": "^3.113.0"
+    }
+}

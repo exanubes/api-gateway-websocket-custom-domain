@@ -1,81 +1,86 @@
-const { DeleteItemCommand, DynamoDBClient, ScanCommand } = require('@aws-sdk/client-dynamodb');
-const {
-    ApiGatewayManagementApiClient,
-    PostToConnectionCommand
-} = require('@aws-sdk/client-apigatewaymanagementapi');
+import { type APIGatewayProxyWebsocketHandlerV2 } from "aws-lambda";
+import {
+  DeleteItemCommand,
+  type DeleteItemCommandInput,
+  DynamoDBClient,
+  ScanCommand,
+  type ScanCommandInput,
+} from "@aws-sdk/client-dynamodb";
+import {
+  ApiGatewayManagementApiClient,
+  PostToConnectionCommand,
+  type PostToConnectionCommandInput,
+} from "@aws-sdk/client-apigatewaymanagementapi";
 
 const dbClient = new DynamoDBClient();
-const table = process.env.CONNECTIONS_TABLE;
+const table = process.env.CONNECTIONS_TABLE!;
 
-exports.handler = async function handler(event) {
-    const body = JSON.parse(event.body);
-    // https://{api-id}.execute-api.{region}.amazonaws.com/{stage}
-    const endpoint = `https://${event.requestContext.domainName}/${event.requestContext.stage}`;
+type Item = { connectionId: { S: string } };
 
-    const connections = await getConnections(table);
+export const handler = async function handler(event) {
+  const body = event.body ? JSON.parse(event.body) : null;
+  if (!body) throw new Error("No body");
+  // https://{api-id}.execute-api.{region}.amazonaws.com/{stage}
+  const endpoint = `https://${event.requestContext.domainName}/${event.requestContext.stage}`;
 
-    const apiGw = new ApiGatewayManagementApiClient({
-        apiVersion: '2018-11-29',
-        endpoint
-    });
+  const connections = await getConnections(table);
 
-    await Promise.all(
-        connections.map(async (connection) => {
-            try {
-                const input = {
-                    ConnectionId: connection.connectionId.S,
-                    Data: body.data
-                };
-                const command = new PostToConnectionCommand(input);
-                return await apiGw.send(command);
-            } catch (error) {
-                if (error.$metadata.httpStatusCode === 410) {
-                    await handleStaleConnection(table, connection.connectionId.S);
-                }
-                console.log(error);
-            }
-        })
-    );
+  const apiGw = new ApiGatewayManagementApiClient({
+    apiVersion: "2018-11-29",
+    endpoint,
+  });
 
-    return {
-        statusCode: 200,
-        body: JSON.stringify({
-            message: 'emit lambda function'
-        })
-    };
-};
+  await Promise.all(
+    connections.map(async (connection) => {
+      await sendMessage(apiGw, table, connection.connectionId.S, body.data);
+    }),
+  );
 
-/**
- * @param {string} table
- * @param {string} connectionId
- * @returns {undefined}
- * */
-function handleStaleConnection(table, connectionId) {
-    /**
-     * @type {import('@aws-sdk/client-dynamodb').DeleteItemCommandInput}
-     * */
-    const input = {
-        TableName: table,
-        Key: { connectionId: { S: connectionId } },
-    };
-    const command = new DeleteItemCommand(input);
-    return void dbClient.send(command);
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      message: "emit lambda function",
+    }),
+  };
+} satisfies APIGatewayProxyWebsocketHandlerV2;
+
+async function handleStaleConnection(table: string, connectionId: string) {
+  const input: DeleteItemCommandInput = {
+    TableName: table,
+    Key: { connectionId: { S: connectionId } },
+  };
+  const command = new DeleteItemCommand(input);
+  return void dbClient.send(command);
 }
 
-/**
- * @param {string} table
- * @returns {Promise<{connectionId: {S: string}}[]>}
- * */
-async function getConnections(table) {
-    /**
-     * @type {import('@aws-sdk/client-dynamodb').ScanCommandInput}
-     * */
-    const input = {
-        TableName: table,
-        ProjectionExpression: "connectionId",
-    };
-    const command = new ScanCommand(input);
+async function getConnections(table: string) {
+  const input: ScanCommandInput = {
+    TableName: table,
+    ProjectionExpression: "connectionId",
+  };
+  const command = new ScanCommand(input);
 
-    const response = await dbClient.send(command);
-    return response.Items ?? [];
+  const response = await dbClient.send(command);
+  return (response.Items ?? []) as Item[];
+}
+
+async function sendMessage(
+  api: ApiGatewayManagementApiClient,
+  table: string,
+  connectionId: string,
+  body: string,
+) {
+  try {
+    const input: PostToConnectionCommandInput = {
+      ConnectionId: connectionId,
+      Data: body,
+    };
+    const command = new PostToConnectionCommand(input);
+    await api.send(command);
+  } catch (error: any) {
+    if (error?.$metadata?.httpStatusCode === 410) {
+      await handleStaleConnection(table, connectionId);
+    }
+    console.log(error);
+  }
 }

@@ -1,23 +1,28 @@
-const { DeleteItemCommand, DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+import {
+  DeleteItemCommand,
+  type DeleteItemCommandInput,
+  DynamoDBClient,
+} from "@aws-sdk/client-dynamodb";
+import { type APIGatewayProxyWebsocketHandlerV2 } from "aws-lambda";
 
 const client = new DynamoDBClient();
 const table = process.env.CONNECTIONS_TABLE;
 
-exports.handler = async function handler(event) {
-    const input = {
-        TableName: table,
-        Key: {
-            connectionId: { S: event.requestContext.connectionId }
-        }
-    };
+export const handler = async function handler(event) {
+  const input: DeleteItemCommandInput = {
+    TableName: table,
+    Key: {
+      connectionId: { S: event.requestContext.connectionId },
+    },
+  };
 
-    const command = new DeleteItemCommand(input);
-    await client.send(command);
+  const command = new DeleteItemCommand(input);
+  await client.send(command);
 
-    return {
-        statusCode: 200,
-        body: JSON.stringify({
-            message: 'disconnected.'
-        })
-    };
-};
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      message: "disconnected.",
+    }),
+  };
+} satisfies APIGatewayProxyWebsocketHandlerV2;
