@@ -1,2 +1,8 @@
 config:
+  apigw-websocket-api-custom-domain:certificateArn:
+    secure: AAABAK/sisi321gm0aUBlmNeDXHr+AwKmYYGNDOGB/pxTASd19alpOCA/FCTnPyMYJHEfAlQk3xmo+JqpaC8mMYvn+VxhxYoDPbVpZoLhBdVZoOItQhYHwpvzCZoUe3IS1ak3lGohSlocAlgRapMAKCAC3htrQ==
+  apigw-websocket-api-custom-domain:domainName: exanub.es
+  apigw-websocket-api-custom-domain:hostedZoneId:
+    secure: AAABANXkvALvV55bMT0InbUOzbeyK/9uaWvtel1E90S5BuYE1IyVepKR69PTPj90ZvmBAoQ=
+  aws-native:region: eu-central-1
   aws:region: eu-central-1
