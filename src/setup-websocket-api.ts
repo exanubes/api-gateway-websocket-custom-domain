@@ -19,7 +19,12 @@ export function setupWebsocketApi() {
     routeSelectionExpression: "$request.body.type",
   });
 
-  const stage = api.addStage("dev");
+  const stage = api.addStage("dev", {
+    stageVariables: {
+      CONNECTIONS_TABLE: table.arn,
+      API_KEY_MAPPING: "chat",
+    },
+  });
 
   const connectLambda = new NodejsFunction("WebSocket_Connect", {
     code: new TypescriptAssetArchive("functions/ws-connect/index.ts", {
