@@ -31,4 +31,11 @@ new aws.route53.Record("alias", {
   ],
 });
 
+new aws.apigatewayv2.ApiMapping("api-mapping", {
+  apiId: api.id,
+  domainName: domainName.domainName,
+  stage: stage.name,
+  apiMappingKey: "chat",
+});
+
 export const ws_api_url = pulumi.interpolate`${api.apiEndpoint}/${stage.name}/`;
