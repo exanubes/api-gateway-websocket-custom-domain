@@ -13,15 +13,18 @@ import {
 } from "@aws-sdk/client-apigatewaymanagementapi";
 
 const dbClient = new DynamoDBClient();
-const table = process.env.CONNECTIONS_TABLE!;
 
 type Item = { connectionId: { S: string } };
 
 export const handler = async function handler(event) {
+  const table = event.stageVariables?.CONNECTIONS_TABLE;
+  const apiKeyMapping = event.stageVariables?.API_KEY_MAPPING;
   const body = event.body ? JSON.parse(event.body) : null;
   if (!body) throw new Error("No body");
-  // https://{api-id}.execute-api.{region}.amazonaws.com/{stage}
-  const endpoint = `https://${event.requestContext.domainName}/${event.requestContext.stage}`;
+  if (!table) throw new Error("table cannot be undefined");
+  if (!apiKeyMapping) throw new Error("apiMappingKey cannot be undefined");
+  
+  const endpoint = `https://${event.requestContext.domainName}/${apiKeyMapping}`;
 
   const connections = await getConnections(table);
 
