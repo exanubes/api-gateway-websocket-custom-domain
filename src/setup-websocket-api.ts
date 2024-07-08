@@ -17,6 +17,7 @@ export function setupWebsocketApi() {
   const api = new WebsocketApi("websocket-api", {
     name: "exanubes-websocket-api",
     routeSelectionExpression: "$request.body.type",
+    disableExecuteApiEndpoint: true,
   });
 
   const stage = api.addStage("dev", {
